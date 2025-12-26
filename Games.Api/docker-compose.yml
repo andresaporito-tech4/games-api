@@ -1,0 +1,17 @@
+services:
+  games_api:
+    build: .
+    container_name: games_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5003:8080"
+    networks:
+      - monitoring_network
+    restart: unless-stopped
+
+networks:
+  monitoring_network:
+    external: true
+    name: monitoring_network
