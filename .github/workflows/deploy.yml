@@ -11,25 +11,38 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # 1️⃣ Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Validar ambiente
+      - name: Configure kubeconfig (Docker Desktop)
+        shell: powershell
+        run: |
+          $source = "C:\Users\Matheus\.kube\config"
+          $targetDir = "C:\actions-runner\_kube"
+          $target = "$targetDir\config"
+
+          if (-not (Test-Path $source)) {
+            Write-Error "kubeconfig não encontrado em $source"
+            exit 1
+          }
+
+          New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+          Copy-Item $source $target -Force
+
+          "KUBECONFIG=$target" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Validate Docker and Kubernetes
         shell: powershell
         run: |
           docker info
           kubectl cluster-info
 
-      # 3️⃣ Build Docker image (CONTEXTO CORRETO)
       - name: Build Docker image
         shell: powershell
         run: |
           cd Games.Api
           docker build -t games-api:latest .
 
-      # 4️⃣ Deploy Kubernetes
       - name: Deploy to Kubernetes
         shell: powershell
         run: |
@@ -37,9 +50,7 @@ jobs:
           kubectl rollout restart deployment games-api -n fiap-cloud-games
           kubectl rollout status deployment games-api -n fiap-cloud-games
 
-      # 5️⃣ Verificação final
       - name: Verify deployment
         shell: powershell
         run: |
           kubectl get pods -n fiap-cloud-games
-          kubectl get svc  -n fiap-cloud-games
