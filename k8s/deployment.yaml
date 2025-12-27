@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: games-api
+  namespace: fiap-cloud-games
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: games-api
+  template:
+    metadata:
+      labels:
+        app: games-api
+    spec:
+      containers:
+        - name: games-api
+          image: games-api:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: games-api-config
+            - secretRef:
+                name: games-api-secret
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

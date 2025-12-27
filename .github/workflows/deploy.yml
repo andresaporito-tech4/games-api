@@ -1,0 +1,45 @@
+name: Deploy Games API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build and Deploy Games API
+    runs-on: self-hosted
+
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Validar ambiente
+      - name: Validate Docker and Kubernetes
+        shell: powershell
+        run: |
+          docker info
+          kubectl cluster-info
+
+      # 3️⃣ Build Docker image (CONTEXTO CORRETO)
+      - name: Build Docker image
+        shell: powershell
+        run: |
+          cd Games.Api
+          docker build -t games-api:latest .
+
+      # 4️⃣ Deploy Kubernetes
+      - name: Deploy to Kubernetes
+        shell: powershell
+        run: |
+          kubectl apply -f k8s/ -n fiap-cloud-games --validate=false
+          kubectl rollout restart deployment games-api -n fiap-cloud-games
+          kubectl rollout status deployment games-api -n fiap-cloud-games
+
+      # 5️⃣ Verificação final
+      - name: Verify deployment
+        shell: powershell
+        run: |
+          kubectl get pods -n fiap-cloud-games
+          kubectl get svc  -n fiap-cloud-games
